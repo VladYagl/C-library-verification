@@ -6,8 +6,26 @@ Proof.
   auto with zarith.
 Qed.
 
+Goal typed_strncat_loop_invariant_limits_pos_lower_preserved.
+Hint limits_pos_lower,preserved,strncat.
+Proof.
+  auto with zarith.
+Qed.
+
 Goal typed_strncat_loop_invariant_limits_pos_preserved.
 Hint limits_pos,preserved,strncat.
+Proof.
+  auto with zarith.
+Qed.
+
+Goal typed_strncat_loop_invariant_limits_pos_upper2_preserved.
+Hint limits_pos_upper2,preserved,strncat.
+Proof.
+  auto with zarith.
+Qed.
+
+Goal typed_strncat_loop_invariant_limits_s_lower_preserved.
+Hint limits_s_lower,preserved,strncat.
 Proof.
   auto with zarith.
 Qed.

@@ -15,9 +15,6 @@ typedef long unsigned int size_t;
 */
 
 /*@
-    logic ℤ min(ℤ a, ℤ b) = (a < b) ? a : b;
-
-
     axiomatic StrLen {
         logic ℤ strlen(char* s) reads s[0 .. ];
 
@@ -55,6 +52,8 @@ typedef long unsigned int size_t;
 
     predicate string_equal{L1, L2}(char* a, char *b) =
         \at(strlen(a), L1) ≡ \at(strlen(b), L2) ∧ array_equal{L1, L2}(a, b, strlen{L1}(a));
+
+    logic ℤ min_len(ℤ len, ℤ n) = (0 ≤ len < n) ? len : n;
 */
 
 /*@
@@ -65,22 +64,42 @@ typedef long unsigned int size_t;
 size_t strlen(const char *s);
 
 /*@
-    // Only case if n ≤ strlen(s)
-    requires big_enough: n ≤ strlen(s);
-
-    requires valid:         valid_read_string(d);
-    requires valid_src:     \valid_read(s + (0 .. (n - 1)));
-    requires valid_dest:    \valid(d + strlen(d) + (0 .. n));
-
-    requires separation: 
-        \separated(&d[0 .. (strlen(d) + n)], &s[0 .. strlen(s)]);
-
-    assigns dest: d[strlen(d) .. strlen(d) + n];
-    assigns res: \result \from d;
+    requires valid: valid_read_string(d);
+    requires valid_src: \valid_read(s + (0 .. (n - 1)));
+    requires valid_read_string(s);
 
     ensures result_ptr: \result ≡ d;
-    ensures sum: strlen(d) ≡ \old(strlen(d)) + n;
-    ensures d_same:   array_equal{Post, Pre}(d, d, \old(strlen(d)));
-    ensures s_copied: array_equal{Post, Pre}(d, \old(strlen(d)), s, 0, n);
+    ensures d_same: array_equal{Post, Pre}(d, d, \old(strlen(d)));
+
+    behavior big_enough:
+        assumes big_enough: (strlen(s) ≥ 0) ∧ (n ≤ strlen(s)); 
+        requires valid_src: \valid_read(s + (0 .. (n - 1)));
+        requires valid_dest: \valid(d + strlen(d) + (0 .. n));
+        requires separation:
+            \separated(&d[0 .. (strlen(d) + n)], &s[0 .. strlen(s)]);
+
+        // assigns res: \result \from d;
+        assigns dest: d[\old(strlen(d)) .. \old(strlen(d) + n)];
+
+        ensures sum: strlen(d) ≡ \old(strlen(d)) + n;
+        ensures s_copied:
+            array_equal{Post, Pre}(d, \old(strlen(d)), s, 0, n);
+
+    behavior small:
+        assumes small: 0 ≤ strlen(s) < n;
+        requires valid_src: valid_read_string(s);
+        requires valid_dest: \valid(d + strlen(d) + (0 .. strlen(s)));
+        requires separation:
+            \separated(&d[0 .. (strlen(d) + strlen(s))], &s[0 .. strlen(s)]);
+
+        // assigns res: \result \from d;
+        assigns dest: d[\old(strlen(d)) .. \old(strlen(d) + strlen(s))];
+
+        ensures sum: strlen(d) ≡ \old(strlen(d)) + \old(strlen(s));
+        ensures s_copied:
+            array_equal{Post, Pre}(d, \old(strlen(d)), s, 0, strlen(s));
+
+    complete behaviors;
+    disjoint behaviors;
 */
 char *strncat(char *restrict d, const char *restrict s, size_t n);
