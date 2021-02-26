@@ -65,7 +65,6 @@ size_t strlen(const char *s);
 
 /*@
     requires valid: valid_read_string(d);
-    requires valid_src: \valid_read(s + (0 .. (n - 1)));
     requires valid_read_string(s);
 
     ensures result_ptr: \result ≡ d;
