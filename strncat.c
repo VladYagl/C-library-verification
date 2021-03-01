@@ -6,29 +6,34 @@ char *strncat(char *restrict d, const char *restrict s, size_t n)
 	d += strlen(d);
 
     //@ assert strlen: d == \at(d + strlen(d), Pre);
+    /*@ assert bad_s: \at(strlen(s) < 0, Pre) ⇒
+        \at(min_len(strlen(s), n), Pre) ≡ \at(n, Pre); */
 
     /*@ 
         loop invariant based{Pre, Here}(&d);
         loop invariant based{Pre, Here}(&s);
-        loop invariant stupid_s: \at(s, Pre) + (d - a - \at(strlen(d), Pre)) ≡ s;
+        loop invariant stupid_s: 
+            \at(s, Pre) + (d - a - \at(strlen(d), Pre)) ≡ s;
 
-        loop invariant n_eq: \at(n, Pre) - n ≡ d - a - \at(strlen(d), Pre);
+        loop invariant n_eq:  \at(n, Pre) - n ≡ d - a - \at(strlen(d), Pre);
+        loop invariant s_eq:  s - \at(s, Pre) ≡ d - a - \at(strlen(d), Pre);
+        loop invariant s_mem: *s ≡ \at(s, Pre)[s - \at(s, Pre)];
 
-        loop invariant limits_pos_lower:  0 ≤ (d - a) - \at(strlen(d), Pre);
-
-        loop invariant s - \at(s, Pre) ≡ d - a - \at(strlen(d), Pre);
-        loop invariant *s ≡ \at(s, Pre)[s - \at(s, Pre)];
+        loop invariant limits_pos_lower: 0 ≤ (d - a) - \at(strlen(d), Pre);
+        loop invariant limits_pos_upper:
+            (d - a) - \at(strlen(d), Pre) ≤ \at(min_len(strlen(s), n), Pre);
 
         loop invariant limits_s_lower: 0 ≤ s - \at(s, Pre);
-        loop invariant limits_s_upper: \at(0 ≤ strlen(s) < n, Pre) ⇒ 
-            s - \at(s, Pre) ≤ \at(strlen(s), Pre);
+        loop invariant limits_s_upper:
+            s - \at(s, Pre) ≤ \at(min_len(strlen(s), n), Pre);
 
-        loop invariant s_same_small: \at(0 ≤ strlen(s) < n, Pre) ⇒
-            ∀ ℤ j; 0 ≤ j < \at(strlen(s), Pre) ⇒
-                \at(s, Pre)[j] ≡ \at(s[j], Pre);
+        loop invariant limits_n_lower: 0 ≤ \at(n, Pre) - n;
+        loop invariant limits_n_upper:
+            \at(n, Pre) - n ≤ \at(min_len(strlen(s), n), Pre);
 
-        loop invariant s_same_big: \at(strlen(s) < 0 ∨ n ≤ strlen(s), Pre) ⇒
-            ∀ ℤ j; 0 ≤ j < \at(n, Pre) ⇒
+
+        loop invariant s_same:
+            ∀ ℤ j; 0 ≤ j < \at(min_len(strlen(s), n), Pre) ⇒
                 \at(s, Pre)[j] ≡ \at(s[j], Pre);
 
         loop invariant copied: ∀ ℤ j; 0 ≤ j < d - a - \at(strlen(d), Pre) ⇒
@@ -42,18 +47,15 @@ char *strncat(char *restrict d, const char *restrict s, size_t n)
 	while (n && *s) n--, *d++ = *s++;
 	*d++ = 0;
     
-    /*@ assert \at(strlen(s) < 0 ∨ n ≤ strlen(s), Pre) ⇒ n ≡ 0; */
-    /*@ assert \at(strlen(s) < 0 ∨ n ≤ strlen(s), Pre) ⇒
-            a[\at(strlen(d), Pre) + \at(n, Pre)] ≡ 0; */
-    /*@ assert \at(strlen(s) < 0 ∨ n ≤ strlen(s), Pre) ⇒
+    /*@ assert a[\at(strlen(d) + min_len(strlen(s), n), Pre)] ≡ 0; */
+
+    /*@ assert \at(n ≤ strlen(s), Pre) ⇒
                 ∀ ℤ j; 0 ≤ j < \at(strlen(d), Pre) + \at(n, Pre) ⇒ 
                     a[j] ≢ 0; */
-
-    /*@ assert \at(0 ≤ strlen(s) < n, Pre) ⇒ *s ≡ 0; */
-    /*@ assert \at(0 ≤ strlen(s) < n, Pre) ⇒
-            a[\at(strlen(d), Pre) + \at(strlen(s), Pre)] ≡ 0; */
     /*@ assert \at(0 ≤ strlen(s) < n, Pre) ⇒
                 ∀ ℤ j; 0 ≤ j < \at(strlen(d), Pre) + \at(strlen(s), Pre) ⇒ 
+                    a[j] ≢ 0; */
+    /*@ assert ∀ ℤ j; 0 ≤ j < \at(strlen(d) + min_len(strlen(s), n), Pre) ⇒ 
                     a[j] ≢ 0; */
 	return a;
 }
