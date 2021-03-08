@@ -1,10 +1,17 @@
 typedef long unsigned int size_t;
+typedef unsigned long int uintptr_t;
+
 #define SIZE_T_MAX 4294967295UL
+#define UCHAR_MAX 255
 
 /*@
+    predicate based(unsigned char* a, unsigned char* b) = a + (b - a) ≡ b;
+
     predicate based(char* a, char* b) = a + (b - a) ≡ b;
 
     predicate based_ptr(char *a, char* b) = *(a + (b - a)) ≡ *b;
+
+    predicate based_full(char *a, char* b) = based(a, b) ∧ based_ptr(a, b);
 
     lemma always_based: ∀ char *a, char *b; based(a, b) ⇒ based_ptr(a, b);
 
@@ -12,6 +19,9 @@ typedef long unsigned int size_t;
 
     predicate based_ptr{L1, L2}(char** a) = 
         based_ptr{L2}(\at(*a, L1), \at(*a, L2));
+
+    predicate based_full{L1, L2}(char** a) = 
+        based_full{L2}(\at(*a, L1), \at(*a, L2));
 */
 
 /*@
@@ -37,6 +47,10 @@ typedef long unsigned int size_t;
 
         axiom neg_len:
             ∀ char* s; strlen(s) < 0 ⇒ (∀ ℤ i; 0 ≤ i ⇒ s[i] ≢ '\0');
+
+        //----
+        axiom same:
+            ∀ char *s, *d; strlen(s) ≥ 0 ⇒ (∀ ℤ i; 0 ≤ i ≤ strlen(s) ⇒ s[i] ≡ d[i]) ⇒ strlen(s) ≡ strlen(d);
     }
 */
 
@@ -54,9 +68,11 @@ typedef long unsigned int size_t;
         array_equal{L1, L2}(a, 0, b, 0, len);
 
     predicate string_equal{L1, L2}(char* a, char *b) =
-        \at(strlen(a), L1) ≡ \at(strlen(b), L2) ∧ array_equal{L1, L2}(a, b, strlen{L1}(a));
+        \at(strlen(a), L1) ≡ \at(strlen(b), L2) ∧ array_equal{L1, L2}(a, b, strlen{L1}(a) + 1);
 
     logic ℤ min_len(ℤ len, ℤ n) = (0 ≤ len < n) ? len : n;
+
+    logic ℤ len(char* s, ℤ n) = min_len(strlen(s), n);
 */
 
 /*@
@@ -68,22 +84,74 @@ size_t strlen(const char *s);
 
 /*@
     requires valid_d: valid_read_string(d);
-    requires valid_src: \valid_read(s + (0 .. (min_len(strlen(s), n - 1)) ));
-    requires valid_dest: \valid(d + strlen(d) + (0 .. min_len(strlen(s), n)));
+    requires valid_src: \valid_read(s + (0 .. (len(s, n - 1)) ));
+    requires valid_dest: \valid(d + strlen(d) + (0 .. len(s, n)));
     requires separation: \separated(
-            &d[0 .. (strlen(d) + min_len(strlen(s), n))],
-            &s[0 .. min_len(strlen(s), n)]
+            &d[0 .. (strlen(d) + len(s, n))],
+            &s[0 .. len(s, n - 1)]
         );
 
-    assigns dest: d[\old(strlen(d)) .. \old(strlen(d) + min_len(strlen(s), n))];
+    assigns dest: d[\old(strlen(d)) .. \old(strlen(d) + len(s, n))];
+    assigns \result \from d;
 
-    ensures sum: strlen(d) ≡ \old(strlen(d) + min_len(strlen(s), n));
+    ensures sum: strlen(d) ≡ \old(strlen(d) + len(s, n));
     ensures result_ptr: \result ≡ d;
     ensures d_same: array_equal{Post, Pre}(d, d, \old(strlen(d)));
     ensures s_copied: array_equal{Post, Pre}(
             d, \old(strlen(d)), 
             s, 0, 
-            \old(min_len(strlen(s), n))
+            \old(len(s, n))
         );
 */
 char *strncat(char *restrict d, const char *restrict s, size_t n);
+
+/*@
+    requires valid_s: valid_read_string(s);
+    requires valid_dest: \valid(d + (0 .. strlen(s)));
+    requires separation: \separated(
+            &d[0 .. strlen(s)],
+            &s[0 .. strlen(s)]
+        );
+
+    assigns dest: d[0 .. strlen(s)];
+    assigns \result \from d;
+
+    ensures len: strlen(d) ≡ \old(strlen(s));
+    ensures len_same: strlen(s) ≡ \old(strlen(s));
+    ensures result_ptr: \result ≡ d + \old(strlen(s));
+    ensures s_copied: string_equal{Pre, Post}(s, d);
+    ensures s_same:
+        ∀ ℤ j; 0 ≤ j ≤ \at(strlen(s), Pre) ⇒
+            s[j] ≡ \old(s[j]);
+*/
+char *__stpcpy(char *d, const char *s);
+
+/*@
+    requires valid_s: valid_read_string(dest);
+    requires valid_s: valid_read_string(src);
+    requires valid_dest: \valid(dest + strlen(dest) + (0 .. strlen(src)));
+    requires separation: \separated(
+            &dest[0 .. (strlen(dest) + strlen(src))],
+            &src[0 .. strlen(src)]
+        );
+
+    assigns dest: (dest + strlen(dest))[0 .. \old(strlen(src))];
+    assigns \result \from dest;
+
+    ensures len: strlen(dest) ≡ \old(strlen(dest) + strlen(src));
+    ensures result_ptr: \result ≡ dest;
+    ensures s_copied: string_equal{Pre, Post}(src, (dest + strlen(dest)));
+*/
+char *strcat(char *dest, const char *src);
+
+
+/*@
+    requires valid_dest: \valid((unsigned char *)dest + (0 .. n - 1));
+
+    assigns dest: ((unsigned char *)dest)[0 .. (n - 1)];
+    assigns \result \from dest;
+
+    ensures set: ∀ ℤ i; 0 ≤ i < n ⇒
+        ((unsigned char *)dest)[i] ≡ (unsigned char)c;
+*/
+void *memset(void *dest, int c, size_t n);
