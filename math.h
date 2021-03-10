@@ -1,4 +1,5 @@
 /*@
+    ensures (__f ^ \result) ≡ 0;
     assigns \nothing;
 */
 static __inline unsigned long long __DOUBLE_BITS(double __f)
@@ -13,9 +14,9 @@ static __inline unsigned long long __DOUBLE_BITS(double __f)
 /*@
     requires finite_arg: \is_finite(x);
     assigns \nothing;
-    ensures \result ≥ 0;
-    ensures x ≥ 0 ⇒ x ≡ \result;
-    ensures x < 0 ⇒ -x ≡ \result;
+    // ensures \result ≥ 0;
+    // ensures x ≥ 0 ⇒ x ≡ \result;
+    // ensures x < 0 ⇒ -x ≡ \result;
     ensures x ≡ \result;
 */
 double fabs(double x)

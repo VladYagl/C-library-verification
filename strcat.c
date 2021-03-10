@@ -4,8 +4,9 @@ char *strcat(char *dest, const char *src)
 {
 	// stpcpy(dest + strlen(dest), src);
     size_t tmp = strlen(dest);
+    size_t tmp2 = strlen(src);
     /*@ assert strlen(src) ≡ \at(strlen(src), Pre); */
-	__stpcpy(dest + tmp, src);
+	__stpcpy(dest + tmp, src) /*@ ghost (tmp2) */;
     
     /*@ assert s_same:
             ∀ ℤ j; 0 ≤ j ≤ \at(strlen(src), Pre) ⇒

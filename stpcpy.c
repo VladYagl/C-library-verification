@@ -1,6 +1,6 @@
 #include "string.h"
 
-char *__stpcpy(char *d, const char *s)
+char *__stpcpy(char *d, const char *s) /*@ ghost (size_t n) */
 {
     /*@ 
         loop invariant based_full{Pre, Here}(&s);

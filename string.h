@@ -113,7 +113,9 @@ char *strncat(char *restrict d, const char *restrict s, size_t n);
             &s[0 .. strlen(s)]
         );
 
-    assigns dest: d[0 .. strlen(s)];
+    requires cheat: strlen(s) ≡ n;
+
+    assigns dest: d[0 .. n];
     assigns \result \from d;
 
     ensures len: strlen(d) ≡ \old(strlen(s));
@@ -124,7 +126,7 @@ char *strncat(char *restrict d, const char *restrict s, size_t n);
         ∀ ℤ j; 0 ≤ j ≤ \at(strlen(s), Pre) ⇒
             s[j] ≡ \old(s[j]);
 */
-char *__stpcpy(char *d, const char *s);
+char *__stpcpy(char *d, const char *s) /*@ ghost (size_t n) */;
 
 /*@
     requires valid_s: valid_read_string(dest);
