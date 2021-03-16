@@ -3,7 +3,7 @@
 void *memset(void *dest, int c, size_t n)
 {
     //@ assert n ≥ 0;
-	unsigned char *s = dest;
+	char *s = dest;
     /*@ ghost before: ; */
 	size_t k;
 
@@ -13,7 +13,7 @@ void *memset(void *dest, int c, size_t n)
 
 	if (!n) return dest;
 
-    //@ assert based(s, (unsigned char*)dest);
+    //@ assert based(s, (char*)dest);
 	s[0] = c;
 	s[n-1] = c;
 	if (n <= 2) return dest;
@@ -46,10 +46,10 @@ void *memset(void *dest, int c, size_t n)
     /*@ assert \at(n, Pre) - n ≥ s - \at(s, before); */
 
     /*@ assert  ∀ ℤ i; 0 ≤ i < (s - \at(s, before)) ⇒
-            \at(s, before)[i] ≡ (unsigned char)c;  */
+            \at(s, before)[i] ≡ (char)c;  */
 
     /*@ assert  ∀ ℤ i; \at(n, Pre) - 4 ≤ i < \at(n, Pre) ⇒
-            \at(s, before)[i] ≡ (unsigned char)c;  */
+            \at(s, before)[i] ≡ (char)c;  */
 
 	/* Pure C fallback with no aliasing violations. */
     /*@
@@ -60,12 +60,12 @@ void *memset(void *dest, int c, size_t n)
         loop invariant s - \at(s, LoopEntry) ≡ \at(n, LoopEntry) - n;
 
         loop invariant ∀ ℤ i; 0 ≤ i < (s - \at(s, before)) ⇒
-            \at(s, before)[i] ≡ (unsigned char)c;
+            \at(s, before)[i] ≡ (char)c;
 
         loop invariant  ∀ ℤ i; \at(n, Pre) - 4 ≤ i < \at(n, Pre) ⇒
-            \at(s, before)[i] ≡ (unsigned char)c;
+            \at(s, before)[i] ≡ (char)c;
 
-        loop invariant (unsigned char *)dest + (s - \at(s, before)) ≡ s;
+        loop invariant (char *)dest + (s - \at(s, before)) ≡ s;
 
         loop assigns n, s;
         loop assigns \at(s, before)[0 .. \at(n - 1, Pre)];
@@ -75,7 +75,7 @@ void *memset(void *dest, int c, size_t n)
     /*@ assert s - \at(s, before) ≥ \at(n, Pre) - 3; */
     /*@ assert s - \at(s, before) ≥ \at(n, Pre) - 4; */
     /*@ assert  ∀ ℤ i; 0 ≤ i < \at(n, Pre) ⇒
-            \at(s, before)[i] ≡ (unsigned char)c;  */
+            \at(s, before)[i] ≡ (char)c;  */
 
 	return dest;
 }

@@ -52,6 +52,8 @@ typedef unsigned long int uintptr_t;
         axiom same:
             ∀ char *s, *d; strlen(s) ≥ 0 ⇒ (∀ ℤ i; 0 ≤ i ≤ strlen(s) ⇒ s[i] ≡ d[i]) ⇒ strlen(s) ≡ strlen(d);
     }
+        // lemma same:
+            // ∀ char *s, *d; strlen(s) ≥ 0 ⇒ (∀ ℤ i; 0 ≤ i ≤ strlen(s) ⇒ s[i] ≡ d[i]) ⇒ strlen(s) ≡ strlen(d);
 */
 
 /*@
@@ -148,12 +150,12 @@ char *strcat(char *dest, const char *src);
 
 
 /*@
-    requires valid_dest: \valid((unsigned char *)dest + (0 .. n - 1));
+    requires valid_dest: \valid((char *)dest + (0 .. n - 1));
 
-    assigns dest: ((unsigned char *)dest)[0 .. (n - 1)];
+    assigns dest: ((char *)dest)[0 .. (n - 1)];
     assigns \result \from dest;
 
     ensures set: ∀ ℤ i; 0 ≤ i < n ⇒
-        ((unsigned char *)dest)[i] ≡ (unsigned char)c;
+        ((char *)dest)[i] ≡ (char)c;
 */
 void *memset(void *dest, int c, size_t n);
