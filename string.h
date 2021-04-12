@@ -5,15 +5,20 @@ typedef unsigned long int uintptr_t;
 #define UCHAR_MAX 255
 
 /*@
+    // weird predicate that means: a.base = b.base
     predicate based(unsigned char* a, unsigned char* b) = a + (b - a) ≡ b;
 
     predicate based(char* a, char* b) = a + (b - a) ≡ b;
 
+    // I think this one means pointers are in the same memmory chunk or smth
     predicate based_ptr(char *a, char* b) = *(a + (b - a)) ≡ *b;
 
     predicate based_full(char *a, char* b) = based(a, b) ∧ based_ptr(a, b);
 
+    // proved automatically
     lemma always_based: ∀ char *a, char *b; based(a, b) ⇒ based_ptr(a, b);
+
+    lemma always_based_2: ∀ char *a, char *b; based(a, b);
 
     predicate based{L1, L2}(char** a) = based(\at(*a, L1), \at(*a, L2));
 
@@ -35,6 +40,9 @@ typedef unsigned long int uintptr_t;
 
         axiom no_end:
             ∀ char* s; (∀ ℤ i; 0 ≤ i ⇒ s[i] ≢ '\0') ⇒ strlen(s) < 0;
+
+        //-------
+        // I think axioms below can be proved as lemmas
 
         axiom index_of_strlen:
             ∀ char* s; strlen(s) ≥ 0 ⇒ s[strlen(s)] ≡ '\0';
@@ -71,6 +79,9 @@ typedef unsigned long int uintptr_t;
 
     predicate string_equal{L1, L2}(char* a, char *b) =
         \at(strlen(a), L1) ≡ \at(strlen(b), L2) ∧ array_equal{L1, L2}(a, b, strlen{L1}(a) + 1);
+
+
+    // logic functions to model strncat standard behaviour
 
     logic ℤ min_len(ℤ len, ℤ n) = (0 ≤ len < n) ? len : n;
 
@@ -115,9 +126,11 @@ char *strncat(char *restrict d, const char *restrict s, size_t n);
             &s[0 .. strlen(s)]
         );
 
-    requires cheat: strlen(s) ≡ n;
+    // Due to a bug I can't use strlen in assigns
+    // so strlen is passed as an extra argument in ghost
+    // requires cheat: strlen(s) ≡ n;
 
-    assigns dest: d[0 .. n];
+    assigns dest: d[0 .. strlen(s)];
     assigns \result \from d;
 
     ensures len: strlen(d) ≡ \old(strlen(s));
@@ -128,7 +141,7 @@ char *strncat(char *restrict d, const char *restrict s, size_t n);
         ∀ ℤ j; 0 ≤ j ≤ \at(strlen(s), Pre) ⇒
             s[j] ≡ \old(s[j]);
 */
-char *__stpcpy(char *d, const char *s) /*@ ghost (size_t n) */;
+char *__stpcpy(char *d, const char *s);
 
 /*@
     requires valid_s: valid_read_string(dest);
@@ -150,6 +163,8 @@ char *strcat(char *dest, const char *src);
 
 
 /*@
+    // unsafe casts! standtard says: (unsigned char)
+    // frama-c can't cast from (void*) to (unsigned char*) sint8 <> uint8
     requires valid_dest: \valid((char *)dest + (0 .. n - 1));
 
     assigns dest: ((char *)dest)[0 .. (n - 1)];

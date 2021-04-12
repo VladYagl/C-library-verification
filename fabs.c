@@ -9,10 +9,9 @@
     lemma abs_signbit: ∀ ℝ x; signbit(\abs(x)) ≡ 0;
 
     // if x is double =>
-    // abs_real(to_real(x)) == to_real(to_double(abs_real(to_real(x))))
+    // abs_real((ℝ) x) == (ℝ) ((double) abs_real((ℝ) x))
     lemma abs_is_double: ∀ double x; \is_finite(x) ⇒ 
         \abs(x) ≡ (double) \abs(x);
-
 */
 
 /*@
