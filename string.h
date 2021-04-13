@@ -41,9 +41,6 @@ typedef unsigned long int uintptr_t;
         axiom no_end:
             ∀ char* s; (∀ ℤ i; 0 ≤ i ⇒ s[i] ≢ '\0') ⇒ strlen(s) < 0;
 
-        //-------
-        // I think axioms below can be proved as lemmas
-
         axiom index_of_strlen:
             ∀ char* s; strlen(s) ≥ 0 ⇒ s[strlen(s)] ≡ '\0';
 
@@ -56,7 +53,9 @@ typedef unsigned long int uintptr_t;
         axiom neg_len:
             ∀ char* s; strlen(s) < 0 ⇒ (∀ ℤ i; 0 ≤ i ⇒ s[i] ≢ '\0');
 
-        //----
+        //-------
+        // I think axiom below can be proved as lemmas
+
         axiom same:
             ∀ char *s, *d; strlen(s) ≥ 0 ⇒ (∀ ℤ i; 0 ≤ i ≤ strlen(s) ⇒ s[i] ≡ d[i]) ⇒ strlen(s) ≡ strlen(d);
     }
