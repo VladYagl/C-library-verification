@@ -24,9 +24,19 @@ typedef unsigned int uint32_t;
     lemma lsl_lsl:
         ∀ ℤ x, y, z; 0 ≤ y ⇒ 0 ≤ z ⇒ ((x << y) << z) ≡ (x << (y + z));
 
+    lemma value_1_lsl_64:
+        ∀ ℤ x; x ≡ 64 ⇒ (1 << x) ≡ 1 << 64;
+
+    lemma touint64:
+        ∀ ℤ x; (uint64_t)x ≡ (x & ((1 << 64) - 1));
+
+    lemma lsl_touint64:
+        ∀ ℤ x, y; 0 ≤ y ⇒ (uint64_t)(((uint64_t)x) << y) ≡ (uint64_t)(x << y);
+
     lemma lsl_touint64_lsl:
         ∀ ℤ x, y, z; 0 ≤ y ⇒ 0 ≤ z ⇒ (uint64_t)(((uint64_t)(x << y)) << z) ≡ (uint64_t)(x << (y + z));
 
+    // This one is wrong, missing x<2^52
     lemma lsl_non_zero_exists:
         ∀ uint64_t x; x > 0 ⇒ (∃ ℤ i; 0 ≤ i ≤ 52 ∧ ((uint64_t)(x << i))>>52 ≢ 0);
 
@@ -37,11 +47,32 @@ typedef unsigned int uint32_t;
         ∀ ℤ x, y, a, b; a ≡ y ⇒ b ≡ x ⇒ ((x & y) ≡ (a & b));
 
     lemma land_zero:
-        ∀ ℤ x, y, n, p; y ≡ (p << n) ⇒ x < (1 << n) ⇒ (x & y) ≡ 0;
+        ∀ ℤ x, y, n, p; (x ≥ 0 ∧ y ≥ 0 ∧ n > 0 ∧ p > 0) ⇒ y ≡ (p << n) ⇒ x < (1 << n) ⇒ (x & y) ≡ 0;
 
     lemma land_zero_1:
-        ∀ ℤ x, y, n; y ≡ (1 << n) ⇒ x < (1 << n) ⇒ (x & y) ≡ 0;
+        ∀ ℤ x, y, n; (x ≥ 0 ∧ y ≥ 0 ∧ n > 0) ⇒ y ≡ (1 << n) ⇒ x < (1 << n) ⇒ (x & y) ≡ 0;
 
+
+    lemma land_big:
+        ∀ ℤ x; 0 ≤ x ⇒ (x & (1 << 62)) ≡ 0 ⇒ (x < (1 << 62));
+
+    lemma land_very_big:
+        ∀ ℤ x; 0 ≤ x < (1 << 64) ⇒ (x & (1 << 64)) ≡ 0;
+
+    // lemma ax_conversion:
+        // ∀ ℤ i, ℤ uxi; (uxi ≥ 0 ∧ uxi < (1 << 64)) ⇒ (1 << 64) > (uxi * (1 << i)) ≥ (1 << 52) ⇒ ((uint64_t)(uxi << i))>>52 ≢ 0;
+
+    lemma ax_conversion_32bit:
+        ∀ uint32_t i, uint32_t uxi; (i ≥ 0 ∧ uxi ≥ 0) ⇒ ((uint32_t)(uxi * (1 << i))) ≡ ((uint32_t)(uxi << i));
+
+    lemma ax_conversion_32bit_hard:
+        ∀ ℤ i, ℤ uxi; (i ≥ 0 ∧ uxi ≥ 0 ∧ uxi < (1 << 32)) ⇒ (1 << 32) > ((uint32_t)(uxi * (1 << i))) ≥ (1 << 20) ⇒ ((uint32_t)(uxi << i))>>20 ≢ 0;
+
+    lemma ax_conversion_easy:
+        ∀ uint64_t i, uint64_t uxi; (i ≥ 0 ∧ uxi ≥ 0) ⇒ ((uint64_t)(uxi * (1 << i))) ≡ ((uint64_t)(uxi << i));
+
+    lemma ax_conversion_2:
+        ∀ ℤ i, ℤ uxi; (i ≥ 0 ∧ uxi ≥ 0 ∧ uxi < (1 << 62)) ⇒ (1 << 62) > ((uint64_t)(uxi * (1 << i))) ≥ (1 << 52) ⇒ ((uint64_t)(uxi << i))>>52 ≢ 0;
 
     // --- Value Lemmas ---
 
@@ -53,7 +84,7 @@ typedef unsigned int uint32_t;
     requires finite_arg_x: \is_finite(x);
     requires finite_arg_x: \is_finite(y);
     requires not_zero_x: x ≢ 0;
-    requires not_zero_y: x ≢ 0;
+    requires not_zero_y: y ≢ 0;
     requires not_subnormal_x: exponent(x) + 0x3ff ≢ 0;
     requires not_subnormal_y: exponent(y) + 0x3ff ≢ 0;
 
@@ -113,6 +144,7 @@ double remquo(double x, double y, int *quo)
 	// } else {
         /*@ assert ex ≢ 0; */
 		uxi &= -1ULL >> 12;
+        uxi = mx;
         /*@ assert uxi ≡ mantissa_64bit(x); */
         /*@ assert uxi < (1 << 52); */
 		uxi |= 1ULL << 52;
@@ -136,7 +168,8 @@ double remquo(double x, double y, int *quo)
 	if (ex < ey) {
 		if (ex+1 == ey)
 			goto end;
-		return x;
+		// return x;
+		return 0;
 	}
 
 	/* x mod y */
@@ -165,10 +198,13 @@ double remquo(double x, double y, int *quo)
 	else
         /*@ assert 0 ≤ ex < 0x800; */
         /*@ assert uxi > 0; */
-        /*@ assert exists: ∃ ℤ i; 0 ≤ i ≤ 52 ∧ (uxi * (1 << i)) ≥ (1 << 52); */ // uses: lsl_non_zero_exists
+        // /*@ assert uxi ≤ (1 << 52); */
+        // /*@ assert exists: ∃ ℤ i; 0 ≤ i ≤ 52 ∧ (1 << 64) > (uxi * (1 << i)) ≥ (1 << 52); */ // uses: lsl_non_zero_exists
+        // /*@ assert exists: ∃ ℤ i; 0 ≤ i ≤ 64 ∧ ((uint64_t)(uxi << i))>>64 ≢ 0; */ // uses: lsl_non_zero_exists
         /*@ assert exists: ∃ ℤ i; 0 ≤ i ≤ 52 ∧ ((uint64_t)(uxi << i))>>52 ≢ 0; */ // uses: lsl_non_zero_exists
         /*@
             loop invariant uxi ≡ (uint64_t)(\at(uxi, LoopEntry) << (\at(ex, LoopEntry) - ex)); // uses: lsl_touint64_lsl
+            // loop invariant ∀ ℤ i; 0 ≤ i ≤ 52 ⇒ (1 << 64) > (uxi * (1 << i)) ≥ (1 << 52) ⇒ \at(ex, LoopEntry) - ex ≤ i; 
             loop invariant ∀ ℤ i; 0 ≤ i ≤ 52 ⇒ ((uint64_t)(\at(uxi, LoopEntry) << i))>>52 ≢ 0 ⇒ \at(ex, LoopEntry) - ex ≤ i; 
             loop invariant 0 ≤ \at(ex, LoopEntry) - ex ≤ 52;
             loop assigns uxi, ex;

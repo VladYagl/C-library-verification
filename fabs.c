@@ -1,4 +1,5 @@
 #include "mathfp.h"
+#include "__fc_integer.h"
 
 /*@
 
@@ -19,6 +20,7 @@
     assigns \nothing;
 
     ensures \abs(x) ≡ \result;
+    ensures bit_test(exponent(x), 1);
 
     // ensures signbit(\result) ≡ 0;
     // ensures mantissa(\result) ≡ mantissa(\old(x));

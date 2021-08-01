@@ -31,25 +31,6 @@
     lemma floor_zero:
         ∀ ℝ x; 0 ≤ x < 1 ⇒ \floor(x) ≡ 0;
 
-    predicate is_double(ℝ x) = x ≡ (double) x;
-
-    // axiomatic make_double {
-
-        // // // explicit casts:
-        // axiom make_double_from_parts:
-        //     ∀ double x; \is_finite(x) ⇒
-        //         make_double(signbit((ℝ) x), exponent((ℝ) x), mantissa_64bit((ℝ) x)) ≡ (ℝ) x;
-
-        // // old version
-        // axiom make_double_from_parts:
-        //     ∀ double x; \is_finite(x) ⇒
-        //         make_double(signbit(x), exponent(x), mantissa_64bit(x)) ≡ x;
-
-        // axiom make_double_from_parts:
-        //     ∀ ℝ x; x ≡ (double) x ⇒
-        //         make_double(signbit(x), exponent(x), mantissa_64bit(x)) ≡ x;
-    // } 
-
     lemma real_ln_nonneg:
         ∀ ℝ x; x ≥ 1 ⇒ \log(x) ≥ 0;
 
@@ -87,33 +68,11 @@
         ∀ ℝ x; x ≢ 0 ⇒ \pow(2, \floor(\log(\abs(x)) / \log(2))) ≢ 0;
 
     lemma real_2__ln:
-        \log(2) ≢ 0;
+        ∀ ℝ x; x ≡ 2 ⇒ \log(x) ≢ 0;
 
     lemma real_abs_div:
         ∀ ℝ x, ℝ y; y > 0 ⇒ \abs(x) / y ≡ \abs(x / y);
 
-    // lemma mantissa_exponent_independent:
-        // ∀ ℝ x; x ≢ 0 ⇒ mantissa_64bit(x) ≡ mantissa_64bit(x * 2);
-
-
-    // --------- WRONG ------------------
-    // lemma mantissa_is_int:
-    //     ∀ ℝ x; x ≡ (double) x ⇒ 
-    //         mantissa_64bit(x) + (1 << 52) ≡ 
-    //             \abs(x) / \pow(2, exponent(x)) * (1 << 52);
-
-    // lemma make_double_help2:
-        // ∀ ℝ x; 1 ≤ \abs(x) / \pow(2, exponent(x)) < 2;
-
-    // lemma make_double_help:
-    //     ∀ ℝ x; x ≡ (double) x ⇒
-    //         \floor(\log(mantissa_64bit(x) + (1 << 52)) / \log(2)) ≡ 52;
-
-    // lemma make_double_from_parts:
-    //     ∀ ℝ x; x ≡ (double) x ⇒
-    //         make_double(signbit(x), exponent(x), mantissa_64bit(x)) ≡ x;
-
-    // --------- CORRECT ----------------
     lemma make_double_signbit:
         ∀ ℝ x; x ≡ (double) x ⇒ x ≢ 0 ⇒ 
             \abs(x) * \pow(-1, signbit(x)) ≡ x;
@@ -136,43 +95,3 @@
         ∀ ℝ x; x ≡ (double) x ⇒ x ≢ 0 ⇒ 
             make_double(signbit(x), exponent(x), mantissa_64bit(x)) ≡ x;
 */
-
-/*@
-    assigns \nothing;
-    ensures x > 0 ⇒ \result ≡ 0;
-    ensures x < 0 ⇒ \result ≡ 1;
-*/
-unsigned long long signbit(double x);
-
-/*@
-    assigns \nothing;
-    ensures \result ≡ exponent(x);
-*/
-signed long long signed_exponent(double x);
-
-/*@
-    assigns \nothing;
-    ensures \result ≡ exponent(x) + 0x3ff;
-*/
-unsigned long long exponent(double x);
-
-
-/*@
-    assigns \nothing;
-    ensures \result ≡ mantissa_64bit(x);
-*/
-unsigned long long mantissa(double x);
-
-
-/*@
-    assigns \nothing;
-    ensures \result ≡ make_double(sign, exponent, mantissa);
-*/
-double make_double(
-        unsigned long long sign,
-        signed long long exponent, 
-        unsigned long long mantissa
-    );
-
-
-
